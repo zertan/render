@@ -1,0 +1,13 @@
+;; shadow-cljs configuration
+{:dev-http
+ {8020 "public"}
+
+ :builds
+ {:main
+  {:target :browser
+   :output-dir "public/js"
+   :asset-path "/js"
+   :devtools {:after-load hello-world.core/run}
+   :modules
+   {:main ; becomes public/js/main.js
+    #_{:init-fn hello-world.core/run}}}}}
