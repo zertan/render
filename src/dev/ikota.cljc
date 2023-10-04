@@ -188,7 +188,6 @@
                  :let [k-str (keyword->str k)]]
            (cond
              (= k :style) (.. element (setAttribute "style" (style-map->css-str v)))
-             ;(= k :ref) (.. element (setAttribute "ref" v))
              (= k :class) (let [css-classes (if (string? v)
                                               (string/split v #"\s+")
                                               (map name v))]

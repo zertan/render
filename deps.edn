@@ -1,5 +1,6 @@
 {:deps {org.clojure/clojurescript {:mvn/version "1.11.121"}
-        town.lilac/pyramid {:mvn/version "3.4.0"}}
+        town.lilac/pyramid {:mvn/version "3.4.0"}
+        com.wsscode/pathom3 {:mvn/version "2023.08.22-alpha"}}
  :paths ["src/main"]
  :aliases {:build {:extra-paths ["src/build"]}
            :test {:extra-paths ["src/test"]}
