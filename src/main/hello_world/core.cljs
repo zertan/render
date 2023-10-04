@@ -264,12 +264,12 @@
   [node things & fun]
   (if (ik/primitive? things) (let [e (.. node (appendChild (js/document.createTextNode things)))
                                    id (random-uuid)]
+                               ;; here we are using fun passed below as a pointer in app state
+                               (if fun ((first fun) [:id id]))
                                {:id id
                                 :type :text
                                 :element e
-                                :attr {}}
-                               ;; here we are using fun passed below as a pointer in app state
-                               (if fun ((first fun) [:id id])))
+                                :attr {}})
       (let [f (first things)
             m (second things)
             r (vec (rest (rest things)))]
@@ -290,6 +290,7 @@
                               :element e
                               :attr m}))
           (= :app-cursor f) (let [cursor (get-in @app m)]
+                              (println "v: " (:value cursor))
                               (render-and-meta-things node (:value cursor) #(swap! app update-in (conj m :mounted-elements) conj %)))
           (keyword? f) (let [e (.. node (appendChild (js/document.createElement (name f))))]
                          (if-let [r (rest things)]
@@ -357,27 +358,30 @@
                    [:div {} "hej igen"]]
                   )
       
-  (let [e (get-in @vdom [:id (first (keys (:id @vdom))) :element])]
+  (let [e (get-in @vdom [:id (second (keys (:id @vdom))) :element])]
     (swap! vdom p/add 
            (render-and-meta-things
-            (js/document.getElementById "app")
+            e
             [:div {}
+             [:div {} "aba"]
              [:app-cursor [:id 1]]])))
 
+  (js/setTimeout
+   (do
+     (swap! app update-in [:id 1 :value] inc)
+     
+     (let [v (get-in @app [:id 1 :value])
+           mounted-ids (get-in @app [:id 1 :mounted-elements])
+                                        ;new-nodes (take (count (get-in @app [:id 1 :mounted-elements])) (repeat (js/document.createTextNode 1)))
+           ]
+       (for [id mounted-ids]
+         (let [new-node (js/document.createTextNode v)
+               node (get-in @vdom (conj id :element))]
+           (println node)
+           (gdom/replaceNode new-node node)
+           (swap! vdom assoc-in (conj id :element) new-node))
+         ))) 1000)
 
-  (do
-    (swap! app update-in [:id 1 :value] inc)
-    )
-  
-  (let [v (get-in @app [:id 1 :value])
-        mounted-ids (get-in @app [:id 1 :mounted-elements])
-        ;new-nodes (take (count (get-in @app [:id 1 :mounted-elements])) (repeat (js/document.createTextNode 1)))
-        ]
-    (for [id mounted-ids]
-      (let [new-node (js/document.createTextNode v)
-            node (get-in @vdom id)]
-        (gdom/replaceNode new-node node)
-        (swap! vdom assoc-in (conj id :e) new-node))
-      ))
+  (get-in @vdom (first (get-in @app [:id 1 :mounted-elements])))
   
   )
