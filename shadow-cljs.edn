@@ -7,7 +7,7 @@
   {:target :browser
    :output-dir "public/js"
    :asset-path "/js"
-   :devtools {:after-load hello-world.core/run}
+   :devtools {:after-load mr-who.app/init}
    :modules
    {:main ; becomes public/js/main.js
-    #_{:init-fn hello-world.core/run}}}}}
+    {:init-fn mr-who.app/init}}}}}

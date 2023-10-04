@@ -257,70 +257,7 @@
 #_(r/render [draggable-component] (js/document.getElementById "app"))
                                         ;(r/render [ui-friends @(r/cursor app [:person/id 1 :person/friends])] (js/document.getElementById "app"))
 
-(declare app)
 
-(defn render-and-meta-things
-  #_([node things] (render-and-meta-things node things (gdom/appendChild)))
-  [node things & fun]
-  (if (ik/primitive? things) (let [e (.. node (appendChild (js/document.createTextNode things)))
-                                   id (random-uuid)]
-                               ;; here we are using fun passed below as a pointer in app state
-                               (if fun ((first fun) [:id id]))
-                               {:id id
-                                :type :text
-                                :element e
-                                :attr {}})
-      (let [f (first things)
-            m (second things)
-            r (vec (rest (rest things)))]
-        (println "f: " f)
-        (println "m: " m)
-        (println "r: " r)
-        (cond
-          (and (keyword? f)
-               (map? m)) (let [e (.. node (appendChild (js/document.createElement (name f))))]
-                           (if r
-                             {:id (random-uuid)
-                              :element e
-                              :type f
-                              :attr m
-                              :children (render-and-meta-things e r)}
-                             {:id (random-uuid)
-                              :type f
-                              :element e
-                              :attr m}))
-          (= :app-cursor f) (let [cursor (get-in @app m)]
-                              (println "v: " (:value cursor))
-                              (render-and-meta-things node (:value cursor) #(swap! app update-in (conj m :mounted-elements) conj %)))
-          (keyword? f) (let [e (.. node (appendChild (js/document.createElement (name f))))]
-                         (if-let [r (rest things)]
-                           {:id (random-uuid)
-                            :type f
-                            :element e
-                            :attr {}
-                            :children (render-and-meta-things e r)}
-                           {:id (random-uuid)
-                            :type f
-                            :element e
-                            :attr m}))
-          (and (list? f) (empty? r)) (render-and-meta-things node f)
-          :else (mapv #(render-and-meta-things node %) things)))))
-
-(defonce vdom (clojure.core/atom (p/db [(do (gdom/removeChildren (js/document.getElementById "app"))
-                                            (render-and-meta-things (js/document.getElementById "app") [:div {} "no-el"]))])))
-
-(defonce app (clojure.core/atom (p/db [{:id 1
-                                        :value 1
-                                        :mounted-elements []}
-                                       {:id 2
-                                        :value 2
-                                        :mounted-elements []}])))
-
-(defn create-vdom-element [e type attr]
-  {:id (random-uuid)
-   :element e
-   :type type
-   :attr attr})
 
 (comment
   (r/render [:div {:id 1}
