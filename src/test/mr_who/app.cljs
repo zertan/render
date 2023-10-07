@@ -2,9 +2,7 @@
   (:require [mr-who.render :as r]
             #_[mr-who.resolve :as resolve]
             [pyramid.core :as p]
-            [goog.dom :as gdom]
-            [com.wsscode.pathom3.connect.indexes :as pci]
-            [com.wsscode.pathom3.connect.operation :as pco]))
+            [goog.dom :as gdom]))
 
 #_(def indexes
   (pci/register [temperature-from-city]))
@@ -44,7 +42,8 @@
                                         {:counter/id 2
                                          :value 2
                                          :name "b"
-                                         :mr-who/mounted-elements []}]}}]))
+                                         :mr-who/mounted-elements []}]
+                             :mr-who/mounted-elements []}}]))
   
   (def query [{:counters [:id :value]}])
   
@@ -59,13 +58,13 @@
     #_([ident & children] (into (counter-list-comp) children))
     ([app vdom {:counter-list/keys [id]}]
      [:div {}
-      #_(for [c [:app-cursor [:counter-list/id id :counter-list/counters]]]
+      `(for [c [1 2] #_[:app-cursor [:counter-list/id id :counters]]]
         (counter-comp app vdom {:counter/id c}))]))
   
   (defn root-comp [app vdom ident]
     [:div {}
-     #_(counter-list-comp app vdom {:counter-list/id 1})
-     (counter-comp app vdom {:counter/id 1})])
+     (counter-list-comp app vdom {:counter-list/id 1})
+     #_(counter-comp app vdom {:counter/id 1})])
 
   (reset! vdom (p/db [(r/render-and-meta-things (js/document.getElementById "app")
                                                 (root-comp app vdom [:root])
@@ -74,6 +73,8 @@
 
 
 (comment
+
+  (p/pull @app {:counter/id [:value]})
   
   (let [to-node (get-in @vdom [:id (second (keys (:id @vdom))) :element])]
     (r/add-new-elements vdom app to-node (my-cool-comp
