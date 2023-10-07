@@ -1,5 +1,5 @@
 (ns mr-who.micro-ns
-  (:require ["./dom.mjs" :as dom]))
+  (:require ["./dom.mjs" :as dom :refer [div button]]))
 
 (defn click-factory [app id]
   (fn [e]
@@ -15,20 +15,20 @@
               node (get-in @app (conj id :element))]
           #_(println "new: " new-node)
           #_(println "old: " (conj id :element))
-          (dom/replace-node new-node node)
+          (d/replace-node new-node node)
           #_(println "aasdd")
           (swap! app assoc-in (conj id :element) new-node)))))))
 
 (defn counter-comp
   #_([app vdom {:keys [id]} & children] (into (counter-comp app vdom id) children))
   ([app {:counter/keys [id]}]
-   [:div {}
-    [:button {:on-click (click-factory app id)} "click"]
-    [:div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]]]))
+   (div {}
+     (button {:on-click (click-factory app id)} "click")
+     [:div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]])))
 
 (defn counter-list-comp
   #_([ident & children] (into (counter-list-comp) children))
   ([app {:counter-list/keys [id]}]
-   [:div{}
-    (for [c [1 2] #_[:app-cursor [:counter-list/id id :counters]]]
-      (counter-comp app {:counter/id c}))]))
+   (div {}
+        (for [c (get-in @app [:counter-list/id id :counters]) #_[:app-cursor [:counter-list/id id :counters]]]
+          (counter-comp app {:counter/id (second c)})))))

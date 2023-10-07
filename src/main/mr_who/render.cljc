@@ -31,7 +31,8 @@
       kw))
 
 (defn keyword? [f]
-  (or (= "div" f) (= "p" f) (= "button" f))
+  (or (= "div" f) (= "p" f) (= "button" f) (= "span" f) (= "a" f) (= "nav" f) (= "svg" f) (= "path" f)
+      (= "ul" f) (= "li" f) (= "img" f) (= "header" f))
   #_(= (first f) ":")
   #_(apply or (map #(= % f) ["div" "p" "button"])))
 

@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@cljs-oss/module-deps": "^1.1.1"
+    "@cljs-oss/module-depsk": "^1.1.1"
   },
   "devDependencies": {
     "vite": "^4.4.11"
