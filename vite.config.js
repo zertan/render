@@ -9,7 +9,7 @@ export default defineConfig({
         lib: {
             entry: "src/js/index",
             name: 'mr-who',
-            formats: ['cjs'],
+            formats: ['esm'],
             // the proper extensions will be added
             fileName: 'mr_who'
         },

@@ -1,4 +1,5 @@
-(ns mr-who.dom)
+(ns mr-who.dom
+  #_(:require [mr-who.macros]))
 
 (defn div [& rest]
   (into [:div] rest))
@@ -11,6 +12,9 @@
 
 (defn a [& rest]
   (into [:a] rest))
+
+#_(defn a [attr-map & rest]
+  ())
 
 (defn nav [& rest]
   (into [:nav] rest))
@@ -33,11 +37,18 @@
 (defn img [& rest]
   (into [:img] rest))
 
+(defn label [& rest]
+  (into [:label] rest))
 
-#_(for [tag [:div :button :li :span]]
-    (eval
-     '(defn ~(symbol tag) [& rest]
-        (into [tag] rest))))
+(defn input [& rest]
+  (into [:input] rest))
+
+(defn form [& rest]
+  (into [:form] rest))
+
+
+
+#_(map m/def-dom-fn [:div :button :li :span])
 
 (defn replace-node [n old]
   (let [parent old.parentNode]

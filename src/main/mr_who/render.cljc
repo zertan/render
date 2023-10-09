@@ -1,7 +1,7 @@
 (ns mr-who.render
   (:require ;[pyramid.core :as p]
-            [clojure.string :as string]
-            #_[goog.dom :as gdom])
+            [squint.string :as string]
+            ["./dom.mjs" :as dom])
   #_(:require-macros [mr-who.macros :refer [or]]))
 
 (defn string? [thing]
@@ -16,6 +16,9 @@
 (defn number? [thing]
   (= (js/typeof thing) "number"))
 
+(defn function? [thing]
+  (= (js/typeof thing) "function"))
+
 (defn random-uuid []
   (crypto.randomUUID))
 
@@ -26,9 +29,9 @@
   (s.replace match replacement))
 
 #_(defn keyword->str [kw]
-    (if (keyword? kw)
-      (name kw)
-      kw))
+  (if (keyword? kw)
+    (name kw)
+    kw))
 
 (defn keyword? [f]
   (or (= "div" f) (= "p" f) (= "button" f) (= "span" f) (= "a" f) (= "nav" f) (= "svg" f) (= "path" f)
@@ -48,6 +51,7 @@
 
 (defn extract-tag-id-css-classes [tag-maybe-id-css-classes]
   (let [as-str tag-maybe-id-css-classes
+        
         chunks (string/split as-str #"\.")
         tag-with-maybe-id (first chunks)
         [tag id] (string/split tag-with-maybe-id #"#")
@@ -87,6 +91,7 @@
                (= k :class) (let [css-classes (if (string? v)
                                                 (string/split v #"\s+"))]
                               (add-css-to-element element css-classes))
+               (= k :classes) (map #(add-css-to-element element %) css-lcasses)
                (re-find #"on-\w+-*\w+" k) (let [event (replace k "on-" "")
                                                 event (replace event "-" "")]
                                             (.. element (addEventListener event v)))
@@ -102,17 +107,18 @@
                                 id (random-uuid)]
                             ;; here we are using fun passed below as a pointer in app state
                             (if fun (fun [:mr-who/id id]))
+                            (println @app)
                             (swap! app assoc-in [:mr-who/id id] (create-vdom-element id e :text {})))
       (let [f (first things)
             m (second things)
             r (vec (rest (rest things)))]
-        #_(js/console.log "f: " f)
-        #_(js/console.log "m: " m)
-        #_(js/console.log "r: " r)
-        
+        (js/console.log "f: " f)
+        (js/console.log "m: " m)
+        (js/console.log "r: " r)
         (cond
           (and (keyword? f)
                (map? m)) (let [e (.. node (appendChild (create-element f m)))]
+                           #_(if r (render-and-meta-things e r {:app app}) [])
                            (create-vdom-element (random-uuid) e f m (if r (render-and-meta-things e r {:app app}) [])))
           (= "app-cursor" f) (let [cursor (get-in @app m)
                                    ident [(first m) (second m)]
@@ -121,7 +127,8 @@
                                                        {:app app
                                                         :fun #(swap! app update-in (conj ident :mr-who/mounted-elements) conj [lastv %])}))
           (keyword? f) (let [e (.. node (appendChild (js/document.createElement f)))]
-                         (let [r (rest things)]
+                          (if-let [r (rest things)]
+                           #_(render-and-meta-things e r {:app app})
                            (create-vdom-element (random-uuid) e f {} (if r (render-and-meta-things e r {:app app}) []))))
           #_(and (list? f) (empty? r)) #_(render-and-meta-things node f {:app app})
           :else (mapv #(render-and-meta-things node % {:app app}) things)))))

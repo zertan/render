@@ -2,8 +2,7 @@
   (:require ["./micro_ns.mjs" :as m]
             ["./render.mjs" :as r]
             ["./normalize.mjs" :as n]
-            ["./dom.mjs" :as d]
-            ["./header.mjs" :as h])
+            ["./dom.mjs" :as d])
   #_(:require-macros [mr-who.macros :as c]))
 
 (defonce app (atom nil))
@@ -21,9 +20,8 @@
                                :mr-who/mounted-elements []}}})
 
 (r/render-and-meta-things (js/document.getElementById "app")
-                          (h/header-comp)
-                          #_(m/counter-list-comp app {:counter-list/id "1"})
-                            {:app app})
+                          (m/counter-list-comp app {:counter-list/id "1"})
+                          {:app app})
 
 #_(reset! vdom (n/db :mr-who/id (r/render-and-meta-things (js/document.getElementById "app")
                                                         (m/counter-comp app vdom {:counter/id "1"})
