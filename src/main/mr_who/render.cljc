@@ -1,6 +1,6 @@
 (ns mr-who.render
   (:require ;[pyramid.core :as p]
-            [squint.string :as string]
+            [clojure.string :as string]
             ["./dom.mjs" :as dom])
   #_(:require-macros [mr-who.macros :refer [or]]))
 
@@ -34,8 +34,7 @@
     kw))
 
 (defn keyword? [f]
-  (or (= "div" f) (= "p" f) (= "button" f) (= "span" f) (= "a" f) (= "nav" f) (= "svg" f) (= "path" f)
-      (= "ul" f) (= "li" f) (= "img" f) (= "header" f))
+  (first (filterv #(= % true) (doall (map #(= f %) ["div" "p" "button" "span" "a" "nav" "svg" "path" "ul" "li" "img" "header" "form" "input"]))))
   #_(= (first f) ":")
   #_(apply or (map #(= % f) ["div" "p" "button"])))
 
@@ -127,7 +126,7 @@
                                                        {:app app
                                                         :fun #(swap! app update-in (conj ident :mr-who/mounted-elements) conj [lastv %])}))
           (keyword? f) (let [e (.. node (appendChild (js/document.createElement f)))]
-                          (if-let [r (rest things)]
+                          (let [r (rest things)]
                            #_(render-and-meta-things e r {:app app})
                            (create-vdom-element (random-uuid) e f {} (if r (render-and-meta-things e r {:app app}) []))))
           #_(and (list? f) (empty? r)) #_(render-and-meta-things node f {:app app})

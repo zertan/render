@@ -1,8 +1,30 @@
 {
+  "name": "mr-who",
+  "version": "1.0.0",
+  "description": "",
+  "main": "vite.config.js",
   "dependencies": {
-    "@cljs-oss/module-depsk": "^1.1.1"
+    "@cljs-oss/module-deps": "^1.1.1",
+    "squint-cljs": "^0.2.31"
   },
   "devDependencies": {
     "vite": "^4.4.11"
-  }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "exports": {
+    "./render": {
+      "import": "./out/render.esm.js"
+    },
+    "./dom": {
+      "import": "./out/dom.esm.js"
+    }
+  },
+  "files": [
+    "out/*"
+  ]
 }
