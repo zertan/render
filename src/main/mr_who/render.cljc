@@ -34,7 +34,7 @@
     kw))
 
 (defn keyword? [f]
-  (first (filterv #(= % true) (doall (map #(= f %) ["div" "p" "button" "span" "a" "nav" "svg" "path" "ul" "li" "img" "header" "form" "input"]))))
+  (first (filterv #(= % true) (doall (map #(= f %) ["div" "p" "button" "span" "a" "nav" "svg" "path" "ul" "li" "img" "header" "form" "input" "label"]))))
   #_(= (first f) ":")
   #_(apply or (map #(= % f) ["div" "p" "button"])))
 
@@ -94,7 +94,7 @@
                (re-find #"on-\w+-*\w+" k) (let [event (replace k "on-" "")
                                                 event (replace event "-" "")]
                                             (.. element (addEventListener event v)))
-               :else (.. element (setAttribute k v)))))
+               :else (if (= v (or "true" nil "null")) (.. element (setAttribute k "")) (.. element (setAttribute k v))))))
        
        element)))
 
