@@ -1,48 +1,9 @@
 (ns mr-who.render
   (:require ;[pyramid.core :as p]
             [clojure.string :as string]
-            ["./dom.mjs" :as dom])
+            ["./dom.mjs" :as dom]
+            ["./utils.mjs" :as u])
   #_(:require-macros [mr-who.macros :refer [or]]))
-
-(defn string? [thing]
-  (= (js/typeof thing) "string"))
-
-(defn nil? [thing]
-  (= (js/typeof thing) "undefined"))
-
-(defn boolean? [thing]
-  (= (js/typeof thing) "boolean"))
-
-(defn number? [thing]
-  (= (js/typeof thing) "number"))
-
-(defn function? [thing]
-  (= (js/typeof thing) "function"))
-
-(defn random-uuid []
-  (crypto.randomUUID))
-
-(defn re-find [regex s]
-  (s.match regex))
-
-(defn replace [s match replacement]
-  (s.replace match replacement))
-
-#_(defn keyword->str [kw]
-  (if (keyword? kw)
-    (name kw)
-    kw))
-
-(defn keyword? [f]
-  (first (filterv #(= % true) (doall (map #(= f %) ["div" "p" "button" "span" "a" "nav" "svg" "path" "ul" "li" "img" "header" "form" "input" "label"]))))
-  #_(= (first f) ":")
-  #_(apply or (map #(= % f) ["div" "p" "button"])))
-
-(defn primitive? [hiccup]
-  (or (string? hiccup)
-      (number? hiccup)
-      (boolean? hiccup)
-      (nil? hiccup)))
 
 (defn create-vdom-element
   ([id e type attr] (create-vdom-element id e type attr []))
@@ -62,14 +23,14 @@
        (map (fn [[k v]]
               (let [css-key k
                     css-val (cond
-                              (number? v) (str v "px")
+                              (u/number? v) (str v "px")
                               :else v)]
                 (str css-key ": " css-val))))
        (string/join "; ")))
 
 #?(:cljs
    (defn add-css-to-element [element css-classes]
-     (let [css-classes (remove #(or (nil? %) (string/blank? %)) css-classes)]
+     (let [css-classes (remove #(or (u/nil? %) (string/blank? %)) css-classes)]
        (when-not (empty? css-classes)
          (doseq [c css-classes]
            (.. element -classList (add c)))))))
@@ -87,11 +48,11 @@
          (doseq [[k v] (js/Object.entries attr-map)]
              (cond
                (= k :style) (.. element (setAttribute "style" (style-map->css-str v)))
-               (= k :class) (let [css-classes (if (string? v)
+               (= k :class) (let [css-classes (if (u/string? v)
                                                 (string/split v #"\s+"))]
                               (add-css-to-element element css-classes))
                (= k :classes) (map #(add-css-to-element element %) css-lcasses)
-               (re-find #"on-\w+-*\w+" k) (let [event (replace k "on-" "")
+               (u/re-find #"on-\w+-*\w+" k) (let [event (replace k "on-" "")
                                                 event (replace event "-" "")]
                                             (.. element (addEventListener event v)))
                :else (if (= v (or "true" nil "null")) (.. element (setAttribute k "")) (.. element (setAttribute k v))))))
@@ -102,35 +63,43 @@
   #_([node things] (render-and-meta-things node things (gdom/appendChild)))
   [node things {:keys [fun app]}]
   #_(js/console.log "app:" app)
-  (if (primitive? things) (let [e (.. node (appendChild (js/document.createTextNode things)))
-                                id (random-uuid)]
+  (if (u/primitive? things) (let [e (.. node (appendChild (js/document.createTextNode things)))
+                                id (u/random-uuid)]
                             ;; here we are using fun passed below as a pointer in app state
                             (if fun (fun [:mr-who/id id]))
-                            (println @app)
                             (swap! app assoc-in [:mr-who/id id] (create-vdom-element id e :text {})))
       (let [f (first things)
             m (second things)
             r (vec (rest (rest things)))]
-        (js/console.log "f: " f)
-        (js/console.log "m: " m)
-        (js/console.log "r: " r)
+        #_(js/console.log "f: " f)
+        #_(js/console.log "m: " m)
+        #_(js/console.log "r: " r)
         (cond
-          (and (keyword? f)
-               (map? m)) (let [e (.. node (appendChild (create-element f m)))]
-                           #_(if r (render-and-meta-things e r {:app app}) [])
-                           (create-vdom-element (random-uuid) e f m (if r (render-and-meta-things e r {:app app}) [])))
+          (= "render" f) ((first r) node)
+          (and (u/keyword? f) (u/map? m)) (let [e (.. node (appendChild (create-element f m)))]
+                                        (create-vdom-element (u/random-uuid) e f m (if r (render-and-meta-things e r {:app app}) [])))
           (= "app-cursor" f) (let [cursor (get-in @app m)
                                    ident [(first m) (second m)]
                                    lastv (last m)]
                                (render-and-meta-things node cursor
                                                        {:app app
                                                         :fun #(swap! app update-in (conj ident :mr-who/mounted-elements) conj [lastv %])}))
-          (keyword? f) (let [e (.. node (appendChild (js/document.createElement f)))]
+          (u/keyword? f) (let [e (.. node (appendChild (create-element f {})))]
                           (let [r (rest things)]
-                           #_(render-and-meta-things e r {:app app})
-                           (create-vdom-element (random-uuid) e f {} (if r (render-and-meta-things e r {:app app}) []))))
-          #_(and (list? f) (empty? r)) #_(render-and-meta-things node f {:app app})
+                           (create-vdom-element (u/random-uuid) e f {} (if r (render-and-meta-things e r {:app app}) []))))
           :else (mapv #(render-and-meta-things node % {:app app}) things)))))
 
 #_(defn add-new-elements [vdom app to-node hic]
   (swap! vdom p/add (render-and-meta-things to-node hic {:app app})))
+
+
+#_(defn render-update [app ]
+  (let [v (get-in @app [:counter/id id :value])
+        elements (get-in @app [:counter/id id :mr-who/mounted-elements])
+        mounted-ids (filterv #(not (u/nil? %)) (mapv #(if (= (first %) :value) (second %)) elements))]
+    (doall
+     (for [id mounted-ids]
+       (let [new-node (js/document.createTextNode v)
+             node (get-in @app (conj id :element))]
+         (dom/replace-node new-node node)
+         (swap! app assoc-in (conj id :element) new-node))))))

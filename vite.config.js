@@ -8,9 +8,14 @@ export default defineConfig({
         outDir: "out",
         lib: {
           entry: { render: "/out/js/src/main/mr_who/render.mjs",
-                   dom: "/out/js/src/main/mr_who/dom.mjs" },
+                   dom: "/out/js/src/main/mr_who/dom.mjs",
+                   mutations: "/out/js/src/main/mr_who/mutations.mjs",
+                   utils: "/out/js/src/main/mr_who/utils.mjs",},
           name: { render: "mr-who/render",
-                  dom: "mr-who/dom" },
+                  dom: "mr-who/dom",
+                  mutations: "mr-who/mutations",
+                  utils: "mr-who/utils"
+                },
           formats: ['esm']
           // the proper extensions will be added
         },

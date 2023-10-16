@@ -22,6 +22,12 @@
     },
     "./dom": {
       "import": "./out/dom.esm.js"
+    },
+    "./mutations": {
+      "import": "./out/mutations.esm.js"
+    },
+    "./utils": {
+      "import": "./out/utils.esm.js"
     }
   },
   "files": [
