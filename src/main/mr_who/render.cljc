@@ -75,6 +75,7 @@
         #_(js/console.log "m: " m)
         #_(js/console.log "r: " r)
         (cond
+          (= (u/map? f)) (render-and-meta-things node (:render f) {:app app})
           (= "render" f) ((first r) node)
           (and (u/keyword? f) (u/map? m)) (let [e (.. node (appendChild (create-element f m)))]
                                         (create-vdom-element (u/random-uuid) e f m (if r (render-and-meta-things e r {:app app}) [])))

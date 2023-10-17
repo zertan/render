@@ -13,6 +13,9 @@
 (defn function? [thing]
   (= (js/typeof thing) "function"))
 
+(defn undefined? [thing]
+  (= (js/typeof thing) "undefined"))
+
 (defn random-uuid []
   (crypto.randomUUID))
 
