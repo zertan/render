@@ -40,8 +40,8 @@
         (= k :class) (let [css-classes (if (u/string? v)
                                          (string/split v #"\s+"))]
                        (add-css-to-element element css-classes))
-        (u/re-find #"on-\w+-*\w+" k) (let [event (replace k "on-" "")
-                                           event (replace event "-" "")]
+        (u/re-find #"on-\w+-*\w+" k) (let [event (u/replace k "on-" "")
+                                           event (u/replace event "-" "")]
                                        (.. element (addEventListener event v)))
         (= k :viewBox) (.. element (setAttributeNS nil k v))
         (= k :d) (.. element (setAttributeNS nil k v))
