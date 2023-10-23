@@ -3,13 +3,12 @@
             ["./utils.mjs" :as u])
   #_(:require [mr-who.macros]))
 
-(defn replace-node [n old]
+(defn replace-node [old n]
   (let [parent old.parentNode]
-    (.replaceChild parent n old)))
+    (.. parent (replaceChild n old))))
 
 (defn append-child [parent child]
-  (.. parent (appendChild child))
-  #_(.parent.appendChild child))
+  (.. parent (appendChild child)))
 
 (defn remove-node [node]
   (let [parent (.. old parentNode)
@@ -68,30 +67,38 @@
     (println "node: " tag)
     (println "c: " children)
     (if (> (count children) 1)
-      (let [ks (mapv u/keys children)
-            vs (mapv u/vals children)
-            vasd (println "vs: " vs)
-            a (filterv #(u/primitive? %) vs)
-            b (filterv #(not (u/primitive? %)) vs)
-            c (mapv #(js/document.createTextNode %) a)
-            new-children (.flat (into b c))]
-        (println "new-c:" new-children)
-        (mapv #(append-helper node (:node %)) new-children)
+      (do
+        (mapv #(append-helper node (:node (first (u/vals %)))) (.flat children))
         {:node node
-         :children (filterv #(not (= :nil (first (u/keys %)))) (u/zipmap ks new-children))})
+         :children (let [c (filterv #(not (= :nil (first (u/keys %))))
+                                    (.flat children))]
+                     (u/zipmap (mapv #(first (u/keys %)) c) (mapv #(first (u/vals %)) c)))})
+      #_(let [ks (mapv u/keys children)
+              vs (mapv u/vals children)
+              vasd (println "vs: " vs)
+              a (filterv #(u/primitive? %) vs)
+              b (filterv #(not (u/primitive? %)) vs)
+              c (mapv #(js/document.createTextNode %) a)
+              new-children (.flat (into b c))]
+          (println "nc: " new-children)
+          (mapv #(append-helper node (:node %)) new-children)
+          {:node node
+           :children (dissoc (u/zipmap ks new-children) :nil)})
       (if (u/primitive? (first children))
         (if-not (u/undefined? (first children))
           (do
             (append-helper node (js/document.createTextNode (first children)))
             {:node node :children (first children)}))
-        (if (or (> (count (:node (first (u/vals (first children))))) 1) (u/list? (first children)))
+        (if (or (> (count (first children)) 1) (u/list? (first children)))
           (do (println "nire: " children)
               (mapv #(append-helper node (:node (first (u/vals %)))) (.flat (first children)))
               {:node node :children (filterv #(not (= :nil (first (u/keys %))))
                                              (.flat (first children)))})
           (do (println "ausbd:" children node)
               (append-helper node (:node (first (u/vals (first children)))))
-              {:node node :children (filterv #(not (= :nil (first (u/keys %)))) (first children))}))))))
+              (if-not (= :nil (first (u/keys (first children))))
+                {:node node :children (first children)}
+                {:node node})))))))
 
 (defn re-helper [m]
   (let [k (first m)
