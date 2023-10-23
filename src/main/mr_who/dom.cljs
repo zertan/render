@@ -65,18 +65,38 @@
 (defn re [{:keys [f] :or {f #(js/document.createElement %)}} tag attr-map children]
   (let [node (f tag)]
     (attr-helper node attr-map)
+    (println "node: " tag)
+    (println "c: " children)
     (if (> (count children) 1)
-      (let [a (filterv #(u/primitive? %) children)
-            b (filterv #(not (u/primitive? %)) children)
-            c (mapv #(js/document.createTextNode %) a)]
-        (mapv #(append-helper node %) (.flat (into b c))))
+      (let [ks (mapv u/keys children)
+            vs (mapv u/vals children)
+            vasd (println "vs: " vs)
+            a (filterv #(u/primitive? %) vs)
+            b (filterv #(not (u/primitive? %)) vs)
+            c (mapv #(js/document.createTextNode %) a)
+            new-children (.flat (into b c))]
+        (println "new-c:" new-children)
+        (mapv #(append-helper node (:node %)) new-children)
+        {:node node
+         :children (filterv #(not (= :nil (first (u/keys %)))) (u/zipmap ks new-children))})
       (if (u/primitive? (first children))
         (if-not (u/undefined? (first children))
-          (append-helper node (js/document.createTextNode (first children))))
-        (if (or (> (count (first children)) 1) (u/list? (first children)))
-          (mapv #(append-helper node %) (.flat (first children)))
-          (append-helper node (first children)))))
-    node))
+          (do
+            (append-helper node (js/document.createTextNode (first children)))
+            {:node node :children (first children)}))
+        (if (or (> (count (:node (first (u/vals (first children))))) 1) (u/list? (first children)))
+          (do (println "nire: " children)
+              (mapv #(append-helper node (:node (first (u/vals %)))) (.flat (first children)))
+              {:node node :children (filterv #(not (= :nil (first (u/keys %))))
+                                             (.flat (first children)))})
+          (do (println "ausbd:" children node)
+              (append-helper node (:node (first (u/vals (first children)))))
+              {:node node :children (filterv #(not (= :nil (first (u/keys %)))) (first children))}))))))
+
+(defn re-helper [m]
+  (let [k (first m)
+        v (second m)]
+    {k m}))
 
 (defn div [attr-map & children] (re {:f #(js/document.createElement %)} :div attr-map children))
 (defn img [attr-map & children] (re {} :img attr-map children))
@@ -90,6 +110,7 @@
                                   (re {:f #(js/document.createElement %)} :svg attr-map children)))
 (defn path [attr-map & children] (re {:f #(js/document.createElementNS "http://www.w3.org/2000/svg" %)} :path attr-map children))
 (defn ul [attr-map & children] (re {} :ul attr-map children))
+(defn text [attr-map & children] (re {} :text attr-map children))
 (defn li [attr-map & children] (re {} :li attr-map children))
 (defn label [attr-map & children] (re {} :label attr-map children))
 (defn input [attr-map & children] (re {} :input attr-map children))
