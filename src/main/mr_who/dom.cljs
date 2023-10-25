@@ -62,71 +62,86 @@
            (println "Error: could not append to following parent: " node ", child:" child)))))
 
 (defn re [{:keys [f] :or {f #(js/document.createElement %)}} tag attr-map children]
-  (let [node (f tag)]
+  (let [node (f tag)
+        children (if (and (u/list? children) (= (count children) 1)) (first children) children)]
     (attr-helper node attr-map)
-    (println "node: " tag)
+    (println "node: " node)
     (println "c: " children)
-    (if (> (count children) 1)
-      (do
-        (mapv #(append-helper node (:node (first (u/vals %)))) (.flat children))
-        {:node node
-         :children (let [c (filterv #(not (= :nil (first (u/keys %))))
-                                    (.flat children))]
-                     (u/zipmap (mapv #(first (u/keys %)) c) (mapv #(first (u/vals %)) c)))})
-      #_(let [ks (mapv u/keys children)
-              vs (mapv u/vals children)
-              vasd (println "vs: " vs)
-              a (filterv #(u/primitive? %) vs)
-              b (filterv #(not (u/primitive? %)) vs)
-              c (mapv #(js/document.createTextNode %) a)
-              new-children (.flat (into b c))]
-          (println "nc: " new-children)
-          (mapv #(append-helper node (:node %)) new-children)
-          {:node node
-           :children (dissoc (u/zipmap ks new-children) :nil)})
-      (if (u/primitive? (first children))
-        (if-not (u/undefined? (first children))
-          (do
-            (append-helper node (js/document.createTextNode (first children)))
-            {:node node :children (first children)}))
-        (if (or (> (count (first children)) 1) (u/list? (first children)))
-          (do (println "nire: " children)
-              (mapv #(append-helper node (:node (first (u/vals %)))) (.flat (first children)))
-              {:node node :children (filterv #(not (= :nil (first (u/keys %))))
-                                             (.flat (first children)))})
-          (do (println "ausbd:" children node)
-              (append-helper node (:node (first (u/vals (first children)))))
-              (if-not (= :nil (first (u/keys (first children))))
-                {:node node :children (first children)}
-                {:node node})))))))
+    (cond
+      (and (u/list? children)
+           (> (count children) 1)) (let [children (.flat children)]
+                                     (println  "c. "children)
+                                     (mapv #(append-helper node (:node (first (u/vals %)))) children)
+                                     (merge {:node node}
+                                            (let [c (filterv #(not (= :nil (first (u/keys %))))
+                                                             (.flat children))]
+                                              (u/zipmap (mapv #(first (u/keys %)) c) (mapv #(first (u/vals %)) c)))))
+      
+      (and (u/primitive? children)
+           (not (u/undefined? children))) (do
+                                            (println "add")
+                                            (println node)
+                                            (println children)
+                                            (append-helper node (js/document.createTextNode children))
+                                            (merge {:node node} children))
+      :else (if-not (u/undefined? children)
+              (do
+                (if-let [c (:node (first (u/vals children)))]
+                  (append-helper node c))
+                (if-not (= :nil (first (u/keys children)))
+                  (merge {:node node} children)
+                  ))
+              {:node node}))))
 
 (defn re-helper [m]
   (let [k (first m)
         v (second m)]
     {k m}))
 
-(defn div [attr-map & children] (re {:f #(js/document.createElement %)} :div attr-map children))
-(defn img [attr-map & children] (re {} :img attr-map children))
-(defn button [attr-map & children] (re {} :button attr-map children))
-(defn span [attr-map & children] (re {} :span attr-map children))
-(defn a [attr-map & children] (re {} :a attr-map children))
-(defn nav [attr-map & children] (re {} :nav attr-map children))
-(defn header [attr-map & children] (re {} :header attr-map children))
-(defn svg [attr-map & children] (if-let [xmlns (:xmlns attr-map)]
-                                  (re {:f #(js/document.createElementNS xmlns %)} :svg attr-map children)
-                                  (re {:f #(js/document.createElement %)} :svg attr-map children)))
-(defn path [attr-map & children] (re {:f #(js/document.createElementNS "http://www.w3.org/2000/svg" %)} :path attr-map children))
-(defn ul [attr-map & children] (re {} :ul attr-map children))
-(defn text [attr-map & children] (re {} :text attr-map children))
-(defn li [attr-map & children] (re {} :li attr-map children))
-(defn label [attr-map & children] (re {} :label attr-map children))
-(defn input [attr-map & children] (re {} :input attr-map children))
-(defn form [attr-map & children] (re {} :form attr-map children))
-(defn p [attr-map & children] (re {} :p attr-map children))
-(defn time [attr-map & children] (re {} :time attr-map children))
-(defn ol [attr-map & children] (re {} :ol attr-map children))
-(defn footer [attr-map & children] (re {} :footer attr-map children))
-(defn main [attr-map & children] (re {} :main attr-map) children)
+(defn mv-id [attr f]
+  (if-let [id (:id attr)]
+    (assoc {} id f)
+    (assoc {} :nil f)))
+
+(defn div [attr-map & children]
+  (mv-id attr-map (re {} :div attr-map children)))
+(defn img [attr-map & children]
+  (mv-id attr-map (re {} :img attr-map children)))
+(defn button [attr-map & children]
+  (mv-id attr-map (re {} :button attr-map children)))
+(defn span [attr-map & children]
+  (mv-id attr-map (re {} :span attr-map children)))
+(defn a [attr-map & children]
+  (mv-id attr-map (re {} :a attr-map children)))
+(defn nav [attr-map & children]
+  (mv-id attr-map (re {} :nav attr-map children)))
+(defn header [attr-map & children]
+  (mv-id attr-map (re {} :header attr-map children)))
+(defn svg [attr-map & children]
+  (mv-id attr-map (re {:f (if-let [xmlns (:xmlns attr-map)]
+                         #(js/document.createElementNS xmlns %)
+                         #(js/document.createElement %))} :svg attr-map children)))
+(defn path [attr-map & children]
+  (mv-id attr-map (re {:f #(js/document.createElementNS "http://www.w3.org/2000/svg" %)} :path attr-map children)))
+(defn ul [attr-map & children]
+  (mv-id attr-map (re {} :ul attr-map children)))
+(defn text [attr-map & children]
+  (mv-id attr-map (re {} :text attr-map children)))
+(defn li [attr-map & children]
+  (mv-id attr-map (re {} :li attr-map children)))
+(defn label [attr-map & children]
+  (mv-id attr-map (re {} :label attr-map children)))
+(defn input [attr-map & children]
+  (mv-id attr-map (re {} :input attr-map children)))
+(defn form [attr-map & children]
+  (mv-id attr-map (re {} :form attr-map children)))
+(defn p [attr-map & children]
+  (mv-id attr-map (re {} :p attr-map children)))
+(defn time [attr-map & children]
+  (mv-id attr-map (re {} :time attr-map children)))
+(defn ol [attr-map & children] (mv-id attr-map (re {} :ol attr-map children)))
+(defn footer [attr-map & children] (mv-id attr-map (re {} :footer attr-map children)))
+(defn main [attr-map & children] (mv-id attr-map (re {} :main attr-map) children))
 #_(defn render [f] (re {} :main attr-map))
 
 ;; (defn button [& rest]) 
