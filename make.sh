@@ -4,6 +4,8 @@ set -euxo pipefail
 files=$(find src/main -type f -iname "*.clj[cs]")
 parallel npx squint compile  --output-dir out/js {}  ::: ${files[@]}
 output=$(find src/main -type f -iname "*.mjs")
+npx vite build
+
 #mkdir -p out/js/
 #parallel mv {} out/js/ ::: ${output[@]}
 
