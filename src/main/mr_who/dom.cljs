@@ -1,7 +1,6 @@
 (ns mr-who.dom
   (:require [clojure.string :as string]
-            ["./utils.mjs" :as u])
-  #_(:require [mr-who.macros]))
+            [mr-who.utils :as u]))
 
 (defn replace-node [old n]
   (let [parent old.parentNode]
@@ -11,12 +10,11 @@
   (let [first-child (first parent.children)]
     (n.replaceChild n old)))
 
-
 (defn append-child [parent child]
   (.. parent (appendChild child)))
 
 (defn remove-node [node]
-  (let [parent (.. old parentNode)
+  (let [parent (.. node parentNode)
         rc (.. parent removeChild)]
     (rc node)))
 
@@ -25,19 +23,19 @@
        (map (fn [[k v]]
               (let [css-key k
                     css-val (cond
-                              (u/number? v) (str v "px")
+                              (number? v) (str v "px")
                               :else v)]
                 (str css-key ": " css-val))))
        (string/join "; ")))
 
 (defn add-css-to-element [element css-classes]
-  (let [css-classes (remove #(or (u/nil? %) (string/blank? %)) css-classes)]
+  (let [css-classes (remove #(or (nil? %) (string/blank? %)) css-classes)]
     (when-not (empty? css-classes)
       (doseq [c css-classes]
         (.. element -classList (add c))))))
 
 (defn remove-css-from-element [element css-classes]
-  (let [css-classes (remove #(or (u/nil? %) (string/blank? %)) css-classes)]
+  (let [css-classes (remove #(or (nil? %) (string/blank? %)) css-classes)]
     (when-not (empty? css-classes)
       (doseq [c css-classes]
         (.. element -classList (remove c))))))
@@ -47,11 +45,11 @@
     (doseq [[k v] (js/Object.entries attr-map)]
       (cond
         (= k :style) (.. element (setAttribute "style" (style-map->css-str v)))
-        (= k :class) (let [css-classes (if (u/string? v)
+        (= k :class) (let [css-classes (if (string? v)
                                          (string/split v #"\s+"))]
                        (add-css-to-element element css-classes))
-        (u/re-find #"on-\w+-*\w+" k) (let [event (u/replace k "on-" "")
-                                           event (u/replace event "-" "")]
+        (re-find #"on-\w+-*\w+" k) (let [event (string/replace k "on-" "")
+                                           event (string/replace event "-" "")]
                                        (.. element (addEventListener event v)))
         (= k :viewBox) (.. element (setAttributeNS nil k v))
         (= k :d) (.. element (setAttributeNS nil k v))
@@ -68,38 +66,38 @@
 (defn append-helper [node child]
   (try (append-child node child)
        (catch js/Error e
-         (if (u/function? child)
+         (if (fn? child)
            (child node)
            (println "Error: could not append to following parent: " node ", child:" child)))))
 
 (defn re [{:keys [f] :or {f #(js/document.createElement %)}} tag attr-map children]
   (let [node (f tag)
-        children (if (and (u/list? children) (= (count children) 1)) (first children) children)]
+        children (if (and (list? children) (= (count children) 1)) (first children) children)]
     (attr-helper node attr-map)
-    #_(println "node: " node)
-    #_(println "c: " children)
+    (println "node: " node)
+    (println "c: " children)
     (cond
-      (and (u/list? children)
+      (and (list? children)
            (> (count children) 1)) (let [children (.flat children)]
                                      #_(println  "c. "children)
-                                     (mapv #(append-helper node (:node (first (u/vals %)))) children)
+                                     (mapv #(append-helper node (:node (first (vals %)))) children)
                                      (merge {:node node}
-                                            (let [c (filterv #(not (= :nil (first (u/keys %))))
+                                            (let [c (filterv #(not (= :nil (first (keys %))))
                                                              (.flat children))]
-                                              (u/zipmap (mapv #(first (u/keys %)) c) (mapv #(first (u/vals %)) c)))))
+                                              (zipmap (mapv #(first (keys %)) c) (mapv #(first (vals %)) c)))))
       
-      (u/primitive? children)
-       (do
-           #_(println "add")
-           #_(println node)
-           #_(println children)
-           (append-helper node (js/document.createTextNode children))
-           (merge {:node node} {:primitive children}))
-      :else (if-not (u/undefined? children)
+      (u/primitive? children) (do
+                                #_(println "add")
+                                #_(println node)
+                                #_(println children)
+                                (append-helper node (js/document.createTextNode children))
+                                (merge {:node node} {:primitive children}))
+      :else (if-not (undefined? children)
+              (println children)
               (do
-                (if-let [c (:node (first (u/vals children)))]
+                (if-let [c (:node (first (vals children)))]
                   (append-helper node c))
-                (if-not (= :nil (first (u/keys children)))
+                (if-not (= :nil (first (keys children)))
                   (merge {:node node} children)
                   {:node node}))))))
 
@@ -153,7 +151,7 @@
   (mv-id attr-map (re {} :form attr-map children)))
 (defn p [attr-map & children]
   (mv-id attr-map (re {} :p attr-map children)))
-(defn time [attr-map & children]
+(defn timea [attr-map & children]
   (mv-id attr-map (re {} :time attr-map children)))
 (defn ol [attr-map & children] (mv-id attr-map (re {} :ol attr-map children)))
 (defn h1 [attr-map & children] (mv-id attr-map (re {} :h1 attr-map children)))
@@ -162,8 +160,8 @@
 (defn h4 [attr-map & children] (mv-id attr-map (re {} :h4 attr-map children)))
 (defn h5 [attr-map & children] (mv-id attr-map (re {} :h5 attr-map children)))
 (defn footer [attr-map & children] (mv-id attr-map (re {} :footer attr-map children)))
-(defn main [attr-map & children] (mv-id attr-map (re {} :main attr-map) children))
-(defn render [attr-map f] (mv-id {} (re {:f (fn [tag] (f))} :render {})))
+(defn main [attr-map & children] (mv-id attr-map (re {} :main attr-map children)))
+(defn render [attr-map f] (mv-id {} (re {:f (fn [tag] (f))} :render {} nil)))
 
 ;; (defn button [& rest]) 
 

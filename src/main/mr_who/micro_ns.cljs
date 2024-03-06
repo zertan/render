@@ -1,5 +1,5 @@
 (ns mr-who.micro-ns
-  (:require ["./dom.mjs" :as dom :refer [div button]]))
+  (:require [mr-who.dom :as d :refer [div button]]))
 
 (defn click-factory [app id]
   (fn [e]
@@ -12,19 +12,16 @@
        (for [id mounted-ids]
          (let [new-node (js/document.createTextNode v)
                node (get-in @app (conj id :element))]
-           (dom/replace-node new-node node)
+           (d/replace-node new-node node)
            (swap! app assoc-in (conj id :element) new-node)))))))
 
-(defn counter-comp
-  #_([app vdom {:keys [id]} & children] (into (counter-comp app vdom id) children))
-  ([app {:counter/keys [id]}]
-   [:div {}
-    [:button {:on-click (click-factory app id)} "click"]
-    [:div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]]]))
+(defn counter-comp [app {:counter/keys [id]}]
+  (let [cf (click-factory app id)]
+    (d/div {} (str id)
+           #_(d/button {:on-click cf} "click")
+           #_(d/div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]))))
 
-(defn counter-list-comp
-  #_([ident & children] (into (counter-list-comp) children))
-  ([app {:counter-list/keys [id]}]
-   [:div {}
+(defn counter-list-comp [app {:counter-list/keys [id]}]
+  (d/div {}
     (for [c (get-in @app [:counter-list/id id :counters]) #_[:app-cursor [:counter-list/id id :counters]]]
-      (counter-comp app {:counter/id (second c)}))]))
+          (counter-comp app {:counter/id (second c)}))))
