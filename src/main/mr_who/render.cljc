@@ -62,7 +62,7 @@
 (defn render-and-meta-things
   #_([node things] (render-and-meta-things node things (gdom/appendChild)))
   [node things {:keys [fun app]}]
-  #_(js/console.log "app:" app)
+  (println "things" things)
   (if (u/primitive? things) (let [e (.. node (appendChild (js/document.createTextNode things)))
                                 id (random-uuid)]
                             ;; here we are using fun passed below as a pointer in app state
@@ -71,9 +71,9 @@
       (let [f (first things)
             m (second things)
             r (vec (rest (rest things)))]
-        #_(js/console.log "f: " f)
-        #_(js/console.log "m: " m)
-        #_(js/console.log "r: " r)
+        (js/console.log "f: " f)
+        (js/console.log "m: " m)
+        (js/console.log "r: " r)
         (cond
           (= (map? f)) (render-and-meta-things node (:render f) {:app app})
           (= "render" f) ((first r) node)

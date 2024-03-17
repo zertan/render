@@ -25,7 +25,7 @@
                     css-val (cond
                               (number? v) (str v "px")
                               :else v)]
-                (str css-key ": " css-val))))
+                (str (name css-key) ": " css-val))))
        (string/join "; ")))
 
 (defn add-css-to-element [element css-classes]
@@ -42,15 +42,17 @@
 
 (defn attr-helper [element attr-map]
   (when-not (empty? attr-map)
-    (doseq [[k v] (js/Object.entries attr-map)]
+    (doseq [[k v] attr-map]
       (cond
+        (= k :id) (set! (.-id element) (name v))
         (= k :style) (.. element (setAttribute "style" (style-map->css-str v)))
         (= k :class) (let [css-classes (if (string? v)
                                          (string/split v #"\s+"))]
                        (add-css-to-element element css-classes))
-        (re-find #"on-\w+-*\w+" k) (let [event (string/replace k "on-" "")
-                                           event (string/replace event "-" "")]
-                                       (.. element (addEventListener event v)))
+        (or (string? k) (keyword? k)) (let [k (name k)] (if (re-find #"on-\w+-*\w+" k)
+                                                          (let [event (string/replace k "on-" "")
+                                                                event (string/replace event "-" "")]
+                                                            (.. element (addEventListener event v)))))
         (= k :viewBox) (.. element (setAttributeNS nil k v))
         (= k :d) (.. element (setAttributeNS nil k v))
         :else (if (= v (or nil "null")) (.. element (setAttribute k "")) (.. element (setAttribute k v)))))))
@@ -63,43 +65,51 @@
        attr (second c)
        r (rest (rest c))] (f parent attr r))) 
 
-(defn append-helper [node child]
-  (try (append-child node child)
+(defn append-helper [node child & {:keys [action] :as opts :or {action append-child}}]
+  (try (action node child)
        (catch js/Error e
          (if (fn? child)
            (child node)
            (println "Error: could not append to following parent: " node ", child:" child)))))
 
 (defn re [{:keys [f] :or {f #(js/document.createElement %)}} tag attr-map children]
-  (let [node (f tag)
-        children (if (and (list? children) (= (count children) 1)) (first children) children)]
+  (let [node (f (name tag))
+        ;a (println "asds" children)
+        ;b (println "a" (first children))
+
+        children (if (and (= (type children) cljs.core/IndexedSeq) (= (count children) 1) (not (= children (list {:nil nil}))))
+                   (first children)
+                   children)]
+    #_(println "after: " children " " (type children))
     (attr-helper node attr-map)
-    (println "node: " node)
-    (println "c: " children)
+    #_(println "node: " node)
+    #_(println "attr-map " attr-map)
+    #_(println "c: " children)
     (cond
-      (and (list? children)
-           (> (count children) 1)) (let [children (.flat children)]
+      (and (or (= (type children) cljs.core/IndexedSeq) (= (type children) cljs.core/LazySeq) (= (type children) cljs.core/PersistentArrayMap))
+           (> (count children) 1)) (let [children (flatten children)]
                                      #_(println  "c. "children)
-                                     (mapv #(append-helper node (:node (first (vals %)))) children)
-                                     (merge {:node node}
+                                     (mapv #(append-helper node (:mr-who/node (first (vals %)))) children)
+                                     (merge {:mr-who/node node}
                                             (let [c (filterv #(not (= :nil (first (keys %))))
-                                                             (.flat children))]
+                                                             (flatten children))]
                                               (zipmap (mapv #(first (keys %)) c) (mapv #(first (vals %)) c)))))
       
-      (u/primitive? children) (do
+      (u/primitive? (first children)) (do
                                 #_(println "add")
                                 #_(println node)
                                 #_(println children)
+
                                 (append-helper node (js/document.createTextNode children))
-                                (merge {:node node} {:primitive children}))
-      :else (if-not (undefined? children)
-              (println children)
+                                (merge {:mr-who/node node} {:primitive children}))
+      :else (if (and (not (undefined? children))  (not (= children (list {:nil nil}))))
+
               (do
-                (if-let [c (:node (first (vals children)))]
+                (if-let [c (:mr-who/node (first (vals children)))]
                   (append-helper node c))
                 (if-not (= :nil (first (keys children)))
-                  (merge {:node node} children)
-                  {:node node}))))))
+                  (merge {:mr-who/node node} children)
+                  {:mr-who/node node}))))))
 
 (defn re-helper [m]
   (let [k (first m)
@@ -147,10 +157,14 @@
   (mv-id attr-map (re {} :label attr-map children)))
 (defn input [attr-map & children]
   (mv-id attr-map (re {} :input attr-map children)))
+(defn select [attr-map & children]
+  (mv-id attr-map (re {} :select attr-map children)))
+(defn option [attr-map & children]
+  (mv-id attr-map (re {} :option attr-map children)))
 (defn form [attr-map & children]
   (mv-id attr-map (re {} :form attr-map children)))
 (defn p [attr-map & children]
-  (mv-id attr-map (re {} :p attr-map children)))
+  (mv-id attr-map (re {} :p attr-map  children)))
 (defn timea [attr-map & children]
   (mv-id attr-map (re {} :time attr-map children)))
 (defn ol [attr-map & children] (mv-id attr-map (re {} :ol attr-map children)))

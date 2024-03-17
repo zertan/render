@@ -17,9 +17,9 @@
 
 (defn counter-comp [app {:counter/keys [id]}]
   (let [cf (click-factory app id)]
-    (d/div {} (str id)
-           #_(d/button {:on-click cf} "click")
-           #_(d/div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]))))
+    (d/div {}
+           (d/button {:on-click cf} "click")
+           (d/div {} "Counter " [:app-cursor [:counter/id id :name]] ": " [:app-cursor [:counter/id id :value]]))))
 
 (defn counter-list-comp [app {:counter-list/keys [id]}]
   (d/div {}

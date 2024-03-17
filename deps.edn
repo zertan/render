@@ -2,7 +2,8 @@
         town.lilac/pyramid {:mvn/version "3.4.0"}
         com.wsscode/pathom3 {:mvn/version "2023.08.22-alpha"}}
  :paths ["src/main"]
- :aliases {:build {:extra-paths ["src/build"]}
+ :aliases {:dev {:extra-deps {cjohansen/gadget-inspector {:mvn/version "0.2023.04.12"}}}
+           :build {:extra-paths ["src/build"]}
            :test {:extra-paths ["src/test"]}
            :cider {:extra-deps {cider/cider-nrepl {:mvn/version "0.37.1"}
                                 cider/piggieback {:mvn/version "0.5.3"}}}
