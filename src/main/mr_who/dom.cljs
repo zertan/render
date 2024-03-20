@@ -1,6 +1,7 @@
 (ns mr-who.dom
   (:require [clojure.string :as string]
-            [mr-who.utils :as u]))
+            [mr-who.utils :as u])
+   (:refer-clojure :exclude [time]))
 
 (defn replace-node [old n]
   (let [parent old.parentNode]
@@ -49,13 +50,15 @@
         (= k :class) (let [css-classes (if (string? v)
                                          (string/split v #"\s+"))]
                        (add-css-to-element element css-classes))
-        (or (string? k) (keyword? k)) (let [k (name k)] (if (re-find #"on-\w+-*\w+" k)
-                                                          (let [event (string/replace k "on-" "")
-                                                                event (string/replace event "-" "")]
-                                                            (.. element (addEventListener event v)))))
-        (= k :viewBox) (.. element (setAttributeNS nil k v))
-        (= k :d) (.. element (setAttributeNS nil k v))
-        :else (if (= v (or nil "null")) (.. element (setAttribute k "")) (.. element (setAttribute k v)))))))
+        (and (or (string? k) (keyword? k)) (re-find #"on-\w+-*\w+" (name k))) (let [k (name k)]
+                                                                                (let [event (string/replace k "on-" "")
+                                                                                      event (string/replace event "-" "")]
+                                                                                  (.. element (addEventListener event v))))
+        (= k :viewBox) (.. element (setAttributeNS nil (name k) v))
+        (= k :d) (.. element (setAttributeNS nil (name k) v))
+        :else (if (= v (or nil "null"))
+                (.. element (setAttribute (name k) ""))
+                (.. element (setAttribute (name k) v)))))))
 
 #_(defn div [& rest]
     (into [:div] rest))
@@ -95,21 +98,19 @@
                                                              (flatten children))]
                                               (zipmap (mapv #(first (keys %)) c) (mapv #(first (vals %)) c)))))
       
-      (u/primitive? (first children)) (do
-                                #_(println "add")
+      (u/primitive? children) (do
+                                #_(println "add: " children)
                                 #_(println node)
                                 #_(println children)
 
                                 (append-helper node (js/document.createTextNode children))
                                 (merge {:mr-who/node node} {:primitive children}))
-      :else (if (and (not (undefined? children))  (not (= children (list {:nil nil}))))
-
-              (do
-                (if-let [c (:mr-who/node (first (vals children)))]
-                  (append-helper node c))
-                (if-not (= :nil (first (keys children)))
-                  (merge {:mr-who/node node} children)
-                  {:mr-who/node node}))))))
+      :else (do
+              (if-let [c (:mr-who/node (first (vals children)))]
+                (append-helper node c))
+              (if-not (= :nil (first (keys children)))
+                (merge {:mr-who/node node} children)
+                {:mr-who/node node})))))
 
 (defn re-helper [m]
   (let [k (first m)
@@ -165,7 +166,7 @@
   (mv-id attr-map (re {} :form attr-map children)))
 (defn p [attr-map & children]
   (mv-id attr-map (re {} :p attr-map  children)))
-(defn timea [attr-map & children]
+(defn time [attr-map & children]
   (mv-id attr-map (re {} :time attr-map children)))
 (defn ol [attr-map & children] (mv-id attr-map (re {} :ol attr-map children)))
 (defn h1 [attr-map & children] (mv-id attr-map (re {} :h1 attr-map children)))

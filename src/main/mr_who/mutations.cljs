@@ -1,7 +1,7 @@
 (ns mr-who.mutations
-  (:require ["./render.mjs" :as r]
-            ["./dom.mjs" :as dom]
-            ["./utils.mjs" :as u]))
+  (:require [mr-who.render :as r]
+            [mr-who.dom :as dom]
+            [mr-who.utils :as u]))
 
 (defn merge-comp [app comp comp-data {:keys [f path]}]
   (let [p (println "p:" path)
